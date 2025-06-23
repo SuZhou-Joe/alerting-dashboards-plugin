@@ -5,11 +5,19 @@
 
 import React from 'react';
 import _ from 'lodash';
-import { EuiLink, EuiToolTip } from '@elastic/eui';
+import { EuiIcon, EuiLink, EuiToolTip } from '@elastic/eui';
 import moment from 'moment';
-import { ALERT_STATE, DEFAULT_EMPTY_DATA } from '../../../utils/constants';
+import {
+  ALERT_STATE,
+  DEFAULT_EMPTY_DATA,
+  MONITOR_TYPE,
+  SEARCH_TYPE,
+} from '../../../utils/constants';
 import { AlertInsight } from '../../../components/AlertInsight';
 import { getDataSourceId } from '../../utils/helpers';
+import { getApplication, getClient } from '../../../services';
+import { formikToWhereClause } from '../../CreateMonitor/containers/CreateMonitor/utils/formikToMonitor';
+import monitorToFormik from '../../CreateMonitor/containers/CreateMonitor/utils/monitorToFormik';
 
 export const renderTime = (time, options = { showFromNow: false }) => {
   const momentTime = moment(time);
@@ -135,27 +143,71 @@ export const alertColumns = (
     truncateText: false,
     render: (total, alert) => {
       const alertId = `alerts_${alert.alerts[0].id}`;
+      const relatedMonitor = monitors.find((monitor) => alert.monitor_id === monitor._id);
       const component = (
-        <EuiLink
-          key={alertId}
-          onClick={() => {
-            openFlyout({
-              ...alert,
-              history,
-              httpClient,
-              loadingMonitors,
-              location,
-              monitors,
-              notifications,
-              setFlyout,
-              closeFlyout,
-              refreshDashboard,
-            });
-          }}
-          data-test-subj={`euiLink_${alert.trigger_name}`}
-        >
-          {total > 1 ? `${total} alerts` : `${total} alert`}
-        </EuiLink>
+        <>
+          <EuiLink
+            key={alertId}
+            onClick={() => {
+              openFlyout({
+                ...alert,
+                history,
+                httpClient,
+                loadingMonitors,
+                location,
+                monitors,
+                notifications,
+                setFlyout,
+                closeFlyout,
+                refreshDashboard,
+              });
+            }}
+            data-test-subj={`euiLink_${alert.trigger_name}`}
+          >
+            {total > 1 ? `${total} alerts` : `${total} alert`}
+          </EuiLink>
+          {relatedMonitor?._source?.monitor_type === MONITOR_TYPE.QUERY_LEVEL ? (
+            <EuiIcon
+              type="notebookApp"
+              style={{ marginLeft: 4, cursor: 'pointer' }}
+              onClick={async () => {
+                const monitorDetails = await getClient().get(
+                  `/api/alerting/monitors/${alert.monitor_id}`,
+                  {
+                    query: {
+                      dataSourceId: getDataSourceId(),
+                    },
+                  }
+                );
+                const formik = monitorToFormik(monitorDetails.resp);
+                const filters = formikToWhereClause(formik);
+
+                const notebookId = await getClient().post('/api/notebooks/note/savedNotebook', {
+                  body: JSON.stringify({
+                    name: `Investigation from ${alertId}`,
+                    context: {
+                      dataSourceId: getDataSourceId(),
+                      timeRange: {
+                        from: alert.start_time,
+                        to: alert.end_time,
+                      },
+                      source: 'Alert',
+                      timeField: formik.timeField,
+                      index: monitorDetails.resp.inputs[0].search.indices[0],
+                      filters,
+                    },
+                  }),
+                });
+
+                getApplication().navigateToUrl(
+                  getApplication().getUrlForApp('observability-notebooks', {
+                    path: `#/${notebookId}`,
+                  })
+                );
+              }}
+            />
+          ) : null}
+        </>
       );
       const datasourceId = getDataSourceId();
       return (

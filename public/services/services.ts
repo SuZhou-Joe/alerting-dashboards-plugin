@@ -71,6 +71,8 @@ export const [getNavigationUI, setNavigationUI] = createGetterSetter<NavigationP
 
 export const [getApplication, setApplication] = createGetterSetter<CoreStart['application']>('application');
 
+export const [getCoreStart, setCoreStart] = createGetterSetter<CoreStart>('core');
+
 export const getUseUpdatedUx = () => {
   return getUISettings().get('home:useNewHomePage', false);
 };
