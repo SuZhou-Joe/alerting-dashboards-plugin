@@ -199,6 +199,15 @@ export const alertColumns = (
                   }),
                 });
 
+                await getClient().post('/api/notebooks/savedNotebook/paragraph', {
+                  body: JSON.stringify({
+                    noteId: notebookId,
+                    paragraphIndex: 0,
+                    paragraphInput: '',
+                    inputType: 'ANOMALY_VISUALIZATION_ANALYSIS',
+                  }),
+                });
+
                 getApplication().navigateToUrl(
                   getApplication().getUrlForApp('observability-notebooks', {
                     path: `#/${notebookId}`,
