@@ -184,12 +184,12 @@ export const alertColumns = (
 
                 const notebookId = await getClient().post('/api/notebooks/note/savedNotebook', {
                   body: JSON.stringify({
-                    name: `Investigation from ${alertId}`,
+                    name: `Investigation from ${alert.trigger_name}`,
                     context: {
                       dataSourceId: getDataSourceId(),
                       timeRange: {
-                        from: alert.start_time,
-                        to: alert.end_time,
+                        from: alert.alerts.at(-1).start_time,
+                        to: alert.alerts.at(-1).end_time || new Date().getTime,
                       },
                       source: 'Alert',
                       timeField: formik.timeField,
