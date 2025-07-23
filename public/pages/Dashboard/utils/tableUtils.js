@@ -182,7 +182,7 @@ export const alertColumns = (
                 const formik = monitorToFormik(monitorDetails.resp);
                 const filters = formikToWhereClause(formik);
 
-                const notebookId = await getClient().post('/api/notebooks/note/savedNotebook', {
+                const notebookId = await getClient().post('/api/investigation/note/savedNotebook', {
                   body: JSON.stringify({
                     name: `Investigation from ${alert.trigger_name}`,
                     context: {
@@ -209,7 +209,7 @@ export const alertColumns = (
                 });
 
                 getApplication().navigateToUrl(
-                  getApplication().getUrlForApp('observability-notebooks', {
+                  getApplication().getUrlForApp('investigation-notebooks', {
                     path: `#/${notebookId}`,
                   })
                 );
