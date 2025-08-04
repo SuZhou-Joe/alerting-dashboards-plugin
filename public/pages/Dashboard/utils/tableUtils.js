@@ -146,9 +146,9 @@ export const alertColumns = (
       const alertId = `alerts_${alert.alerts[0].id}`;
       const relatedMonitor = monitors.find((monitor) => alert.monitor_id === monitor._id);
       const component = (
-        <>
-          <EuiLink
-            key={alertId}
+        <EuiLink key={alertId}>
+          <span
+            data-test-subj={`euiLink_${alert.trigger_name}`}
             onClick={() => {
               openFlyout({
                 ...alert,
@@ -163,10 +163,9 @@ export const alertColumns = (
                 refreshDashboard,
               });
             }}
-            data-test-subj={`euiLink_${alert.trigger_name}`}
           >
             {total > 1 ? `${total} alerts` : `${total} alert`}
-          </EuiLink>
+          </span>
           {relatedMonitor?._source?.monitor_type === MONITOR_TYPE.QUERY_LEVEL ? (
             <EuiIcon
               type="notebookApp"
@@ -224,15 +223,6 @@ export const alertColumns = (
                   }),
                 });
 
-                // await getClient().post('/api/notebooks/savedNotebook/paragraph', {
-                //   body: JSON.stringify({
-                //     noteId: notebookId,
-                //     paragraphIndex: 0,
-                //     paragraphInput: '',
-                //     inputType: 'ANOMALY_VISUALIZATION_ANALYSIS',
-                //   }),
-                // });
-
                 getApplication().navigateToUrl(
                   getApplication().getUrlForApp('investigation-notebooks', {
                     path: `#/${notebookId}`,
@@ -241,7 +231,7 @@ export const alertColumns = (
               }}
             />
           ) : null}
-        </>
+        </EuiLink>
       );
       const datasourceId = getDataSourceId();
       return (
