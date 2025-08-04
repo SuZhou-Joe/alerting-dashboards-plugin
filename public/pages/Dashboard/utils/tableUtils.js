@@ -18,6 +18,7 @@ import { getDataSourceId } from '../../utils/helpers';
 import { getApplication, getClient } from '../../../services';
 import { formikToWhereClause } from '../../CreateMonitor/containers/CreateMonitor/utils/formikToMonitor';
 import monitorToFormik from '../../CreateMonitor/containers/CreateMonitor/utils/monitorToFormik';
+import { OPERATORS_PPL_QUERY_MAP } from '../../CreateMonitor/containers/CreateMonitor/utils/whereFilters';
 
 export const renderTime = (time, options = { showFromNow: false }) => {
   const momentTime = moment(time);
@@ -181,6 +182,27 @@ export const alertColumns = (
                 );
                 const formik = monitorToFormik(monitorDetails.resp);
                 const filters = formikToWhereClause(formik);
+                const bucketTimeRange = moment.duration(
+                  formik.bucketValue,
+                  formik.bucketUnitOfTime
+                );
+
+                const selectionFrom = alert.alerts.at(0).start_time - bucketTimeRange;
+                const selectionTo =
+                  alert.alerts.at(0)?.end_time || new Date().getTime() - bucketTimeRange;
+
+                const alertLength = alert.alerts.length;
+                let baselineFrom;
+                if (alertLength >= 2) {
+                  baselineFrom = alert.alerts.at(1).end_time;
+                } else {
+                  const alertDuration = selectionTo - selectionFrom;
+                  baselineFrom = selectionFrom - alertDuration;
+                }
+
+                const PPLFilters = formik.filters.map((filter) =>
+                  OPERATORS_PPL_QUERY_MAP[filter.operator].query(filter)
+                );
 
                 const notebookId = await getClient().post('/api/investigation/note/savedNotebook', {
                   body: JSON.stringify({
@@ -188,13 +210,16 @@ export const alertColumns = (
                     context: {
                       dataSourceId: getDataSourceId(),
                       timeRange: {
-                        from: alert.alerts.at(-1).start_time,
-                        to: alert.alerts.at(-1).end_time || new Date().getTime,
+                        selectionFrom: selectionFrom,
+                        selectionTo: selectionTo,
+                        baselineFrom: baselineFrom,
+                        baselineTo: selectionFrom,
                       },
                       source: 'Alert',
                       timeField: formik.timeField,
                       index: monitorDetails.resp.inputs[0].search.indices[0],
                       filters,
+                      PPLFilters: PPLFilters,
                     },
                   }),
                 });
