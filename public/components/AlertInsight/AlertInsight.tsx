@@ -104,8 +104,9 @@ export const AlertInsight: React.FC<AlertInsightProps> = (props: AlertInsightPro
       }
       // 3.3 preprocess ppl query base with concatenated filters
       const pplAlertTriggerTime = moment
-        .utc(alert.last_notification_time)
+        .utc(alert.start_time)
         .format(DEFAULT_PPL_QUERY_DATE_FORMAT);
+      
       const basePPL =
         `source=${index} | ` +
         `where ${pplTimeField} >= TIMESTAMPADD(${pplBucketUnitOfTime}, -${pplBucketValue}, '${pplAlertTriggerTime}') and ` +
