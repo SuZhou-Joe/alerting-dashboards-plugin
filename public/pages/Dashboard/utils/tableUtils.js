@@ -186,16 +186,14 @@ export const alertColumns = (
                   .asMilliseconds();
 
                 const selectionFrom = alert.alerts.at(0).start_time - bucketTimeRange;
-                const selectionTo =
-                  (alert.alerts.at(0)?.end_time || new Date().getTime()) - bucketTimeRange;
+                const selectionTo = alert.alerts.at(0).start_time;
 
                 const alertLength = alert.alerts.length;
                 let baselineFrom;
                 if (alertLength >= 2) {
                   baselineFrom = alert.alerts.at(1).end_time - bucketTimeRange;
                 } else {
-                  const alertDuration = selectionTo - selectionFrom;
-                  baselineFrom = selectionFrom - alertDuration;
+                  baselineFrom = selectionFrom - bucketTimeRange;
                 }
 
                 const PPLFilters = formik.filters.map((filter) =>
