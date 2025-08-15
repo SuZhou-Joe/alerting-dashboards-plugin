@@ -216,6 +216,9 @@ export const alertColumns = (
                       index: monitorDetails.resp.inputs[0].search.indices[0],
                       filters,
                       PPLFilters: PPLFilters,
+                      variables: {
+                        alert: { ...alert.alerts[0], alertNumber: alert.alerts.length },
+                      },
                     },
                   }),
                 });
