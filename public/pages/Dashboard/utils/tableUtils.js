@@ -13,12 +13,13 @@ import {
   MONITOR_TYPE,
   SEARCH_TYPE,
 } from '../../../utils/constants';
-import { AlertInsight } from '../../../components/AlertInsight';
+import { AlertInsight, contextProvider } from '../../../components/AlertInsight';
 import { getDataSourceId } from '../../utils/helpers';
 import { getApplication, getClient } from '../../../services';
 import { formikToWhereClause } from '../../CreateMonitor/containers/CreateMonitor/utils/formikToMonitor';
 import monitorToFormik from '../../CreateMonitor/containers/CreateMonitor/utils/monitorToFormik';
 import { OPERATORS_PPL_QUERY_MAP } from '../../CreateMonitor/containers/CreateMonitor/utils/whereFilters';
+import { dataSourceEnabled } from '../../../pages/utils/helpers';
 
 export const renderTime = (time, options = { showFromNow: false }) => {
   const momentTime = moment(time);
@@ -171,15 +172,14 @@ export const alertColumns = (
               type="notebookApp"
               style={{ marginLeft: 4, cursor: 'pointer' }}
               onClick={async () => {
-                const monitorDetails = await getClient().get(
+                const dataSourceQuery = dataSourceEnabled()
+                  ? { query: { dataSourceId: datasourceId || '' } }
+                  : undefined;
+                const monitorResp = await getClient().get(
                   `/api/alerting/monitors/${alert.monitor_id}`,
-                  {
-                    query: {
-                      dataSourceId: getDataSourceId(),
-                    },
-                  }
+                  dataSourceQuery
                 );
-                const formik = monitorToFormik(monitorDetails.resp);
+                const formik = monitorToFormik(monitorResp.resp);
                 const filters = formikToWhereClause(formik);
                 const bucketTimeRange = moment
                   .duration(formik.bucketValue, formik.bucketUnitOfTime)
@@ -200,6 +200,12 @@ export const alertColumns = (
                   OPERATORS_PPL_QUERY_MAP[filter.operator].query(filter)
                 );
 
+                const alertSummaryContext = await contextProvider(
+                  alert.alerts[0],
+                  getClient(),
+                  dataSourceQuery
+                );
+
                 const notebookId = await getClient().post('/api/investigation/note/savedNotebook', {
                   body: JSON.stringify({
                     name: `Investigation from ${alert.trigger_name}`,
@@ -213,11 +219,15 @@ export const alertColumns = (
                       },
                       source: 'Alert',
                       timeField: formik.timeField,
-                      index: monitorDetails.resp.inputs[0].search.indices[0],
+                      index: monitorResp.resp.inputs[0].search.indices[0],
                       filters,
                       PPLFilters: PPLFilters,
                       variables: {
-                        alert: { ...alert.alerts[0], alertNumber: alert.alerts.length },
+                        alert: {
+                          ...alert.alerts[0],
+                          alertNumber: alert.alerts.length,
+                          alertSummaryContext: alertSummaryContext.context,
+                        },
                       },
                     },
                   }),

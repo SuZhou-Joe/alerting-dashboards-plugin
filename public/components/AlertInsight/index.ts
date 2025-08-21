@@ -3,6 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AlertInsight } from './AlertInsight';
+import { AlertInsight, contextProvider } from './AlertInsight';
 
-export { AlertInsight };
+export { AlertInsight, contextProvider };
